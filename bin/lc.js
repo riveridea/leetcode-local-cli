@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -35,6 +35,8 @@ import {
   supportedLanguageSlugs,
 } from '../lib/workspace.js';
 
+maybeRelaunchWithEnvProxy();
+
 const COMMANDS = new Map([
   ['help', commandHelp],
   ['login', commandLogin],
@@ -51,6 +53,94 @@ const COMMANDS = new Map([
   ['companies', commandCompanies],
   ['company', commandCompany],
 ]);
+
+function maybeRelaunchWithEnvProxy() {
+  debugEnvProxy('checking proxy relaunch');
+  if (process.env.LC_ENV_PROXY_REEXEC || hasUseEnvProxyEnabled()) {
+    debugEnvProxy('proxy relaunch skipped; already enabled');
+    return;
+  }
+
+  const proxyEnv = normalizedProxyEnv();
+  if (!proxyEnv) {
+    debugEnvProxy('proxy relaunch skipped; no proxy env');
+    return;
+  }
+
+  if (!supportsUseEnvProxyFlag()) {
+    debugEnvProxy('proxy relaunch skipped; Node does not support --use-env-proxy');
+    return;
+  }
+
+  debugEnvProxy('relaunching with --use-env-proxy');
+
+  const child = spawnSync(
+    process.execPath,
+    ['--use-env-proxy', ...process.execArgv, ...process.argv.slice(1)],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        ...proxyEnv,
+        LC_ENV_PROXY_REEXEC: '1',
+      },
+    },
+  );
+
+  if (child.error) {
+    console.warn(`Warning: could not relaunch Node with proxy support: ${child.error.message}`);
+    return;
+  }
+
+  if (child.signal) {
+    process.kill(process.pid, child.signal);
+    return;
+  }
+
+  process.exit(child.status ?? 1);
+}
+
+function debugEnvProxy(message) {
+  if (process.env.LC_DEBUG_PROXY) {
+    console.error(`[lc proxy] ${message}`);
+  }
+}
+
+function hasUseEnvProxyEnabled() {
+  return process.execArgv.includes('--use-env-proxy')
+    || /\b--use-env-proxy\b/.test(process.env.NODE_OPTIONS || '');
+}
+
+function normalizedProxyEnv() {
+  const pairs = [
+    ['HTTP_PROXY', 'http_proxy'],
+    ['HTTPS_PROXY', 'https_proxy'],
+    ['NO_PROXY', 'no_proxy'],
+  ];
+  const env = {};
+  let hasProxy = false;
+
+  for (const [upper, lower] of pairs) {
+    const value = process.env[upper] || process.env[lower];
+    if (!value) {
+      continue;
+    }
+
+    env[upper] = value;
+    if (upper !== 'NO_PROXY') {
+      hasProxy = true;
+    }
+  }
+
+  return hasProxy ? env : undefined;
+}
+
+function supportsUseEnvProxyFlag() {
+  const child = spawnSync(process.execPath, ['--use-env-proxy', '--version'], {
+    stdio: 'ignore',
+  });
+  return !child.error && child.status === 0;
+}
 
 main().catch((error) => {
   console.error(`\nError: ${error.message}`);
