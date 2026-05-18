@@ -177,10 +177,16 @@ lc progress --ascii
 
 ## Topic Frequency Search
 
-List common topic slugs:
+List all topic slugs:
 
 ```sh
 lc topics
+```
+
+List only common/top topic slugs:
+
+```sh
+lc topics --top
 ```
 
 Find the most frequent problems for a topic:

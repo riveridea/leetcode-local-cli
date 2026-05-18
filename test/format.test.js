@@ -112,7 +112,7 @@ test('formats frequent problem lists', () => {
 test('formats topic tags', () => {
   const text = formatTopicTags([{ name: 'Depth-First Search', slug: 'depth-first-search' }]);
 
-  assert.match(text, /Common topic tags:/);
+  assert.match(text, /Topic tags:/);
   assert.match(text, /Depth-First Search\s+depth-first-search/);
 });
 

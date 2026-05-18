@@ -178,7 +178,7 @@ Usage:
   lc accepted [title-slug] [--lang cpp] [--json]
   lc list
   lc progress [--limit 500] [--columns 50] [--cell-size 2] [--ascii]
-  lc topics
+  lc topics [--top]
   lc topics <topic[,topic...]> [--limit 20] [--json]
   lc companies [search] [--limit 50]
   lc company <company[,company...]> [--limit 20] [--json]
@@ -476,10 +476,14 @@ async function commandProgress(args) {
 async function commandTopics(args) {
   const config = loadConfig({ quiet: true });
   const api = new LeetCodeApi(config);
-  const tags = await api.getTopKnowledgeTags();
+  const tags = args.options.top
+    ? await api.getTopKnowledgeTags()
+    : await api.getQuestionTopicTags();
 
   if (args.positionals.length === 0) {
-    console.log(formatTopicTags(tags));
+    console.log(formatTopicTags(tags, {
+      label: args.options.top ? 'Common topic tags' : 'All topic tags',
+    }));
     return;
   }
 
