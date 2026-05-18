@@ -2,12 +2,35 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  findLatestAcceptedSubmission,
+} from '../lib/api.js';
+import {
   formatCheckResult,
   formatCompanyTags,
   formatProgressGrid,
   formatProblemList,
   formatTopicTags,
 } from '../lib/format.js';
+
+test('finds latest accepted submission', () => {
+  const submission = findLatestAcceptedSubmission([
+    { id: '1', statusDisplay: 'Wrong Answer', lang: 'cpp' },
+    { id: '2', statusDisplay: 'Accepted', lang: 'python3' },
+    { id: '3', statusDisplay: 'Accepted', lang: 'cpp' },
+  ]);
+
+  assert.equal(submission.id, '2');
+});
+
+test('finds latest accepted submission by language', () => {
+  const submission = findLatestAcceptedSubmission([
+    { id: '1', statusDisplay: 'Wrong Answer', lang: 'cpp' },
+    { id: '2', statusDisplay: 'Accepted', lang: 'python3' },
+    { id: '3', statusDisplay: 'Accepted', lang: 'cpp' },
+  ], { langSlug: 'cpp' });
+
+  assert.equal(submission.id, '3');
+});
 
 test('formats wrong-answer submit fields returned by LeetCode', () => {
   const formatted = formatCheckResult({

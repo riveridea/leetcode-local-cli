@@ -111,6 +111,20 @@ Submit the solution:
 lc submit two-sum
 ```
 
+Print your latest accepted submission code for a problem:
+
+```sh
+lc accepted two-sum
+```
+
+When running from a local problem directory, the title slug can be omitted.
+
+If you only want accepted code for one language, add a language slug:
+
+```sh
+lc accepted two-sum --lang cpp
+```
+
 Add `--json` to `test` or `submit` when you need to inspect the raw result
 returned by LeetCode:
 

@@ -46,6 +46,8 @@ const COMMANDS = new Map([
   ['open', commandOpen],
   ['test', commandTest],
   ['submit', commandSubmit],
+  ['accepted', commandAccepted],
+  ['ac', commandAccepted],
   ['list', commandList],
   ['progress', commandProgress],
   ['topics', commandTopics],
@@ -173,6 +175,7 @@ Usage:
   lc open [title-slug] [--editor vim]
   lc test [title-slug] [--input cases.txt] [--file solution.cpp] [--lang cpp] [--json]
   lc submit [title-slug] [--file solution.cpp] [--lang cpp] [--json]
+  lc accepted [title-slug] [--lang cpp] [--json]
   lc list
   lc progress [--limit 500] [--columns 50] [--cell-size 2] [--ascii]
   lc topics
@@ -187,6 +190,7 @@ Examples:
   lc open two-sum --editor vim
   lc test two-sum
   lc submit two-sum
+  lc accepted two-sum
   lc progress
   lc topics two pointers
   lc topics dfs --limit 15
@@ -413,6 +417,26 @@ async function commandSubmit(args) {
   printJsonIfRequested(result, args.options);
 }
 
+async function commandAccepted(args) {
+  const titleSlug = await resolveAcceptedTitleSlug(args);
+  const langSlug = args.options.lang && args.options.lang !== true
+    ? args.options.lang
+    : undefined;
+  const config = loadConfig({ quiet: true });
+  const api = new LeetCodeApi(config);
+  const accepted = await api.getLatestAcceptedSubmission({
+    titleSlug,
+    langSlug,
+  });
+
+  if (args.options.json) {
+    console.log(JSON.stringify(accepted, null, 2));
+    return;
+  }
+
+  console.log(accepted.code.trimEnd());
+}
+
 async function commandList(args) {
   const workspaceRoot = resolveWorkspaceRoot(args);
   const problems = await listLocalProblems(workspaceRoot);
@@ -573,6 +597,21 @@ function resolveWorkspaceRoot(args) {
   }
 
   return defaultWorkspaceRoot(process.cwd());
+}
+
+async function resolveAcceptedTitleSlug(args) {
+  const slug = args.positionals[0];
+  if (slug) {
+    return slug;
+  }
+
+  const problemDir = findProblemDir(resolveWorkspaceRoot(args));
+  if (!problemDir) {
+    throw new Error('Missing title-slug. Run "lc accepted <title-slug>", or run "lc accepted" from a local problem directory.');
+  }
+
+  const meta = await loadProblemMeta(problemDir);
+  return meta.titleSlug;
 }
 
 async function readTestInput(inputPath) {
