@@ -1,0 +1,19 @@
+{
+  "name": "leetcode-local-cli",
+  "version": "0.1.0",
+  "description": "Practice LeetCode problems locally and run or submit solutions from the terminal.",
+  "type": "module",
+  "bin": {
+    "lc": "./bin/lc.js",
+    "leetcode-local": "./bin/lc.js"
+  },
+  "scripts": {
+    "lc": "node ./bin/lc.js",
+    "check": "node --check ./bin/lc.js && node --check ./lib/api.js && node --check ./lib/browser-cookies.js && node --check ./lib/config.js && node --check ./lib/format.js && node --check ./lib/workspace.js && node --test",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

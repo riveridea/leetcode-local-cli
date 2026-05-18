@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local user data and downloaded practice work
+problems/
+.leetcode-local/
+
+# Existing personal practice notes/files outside the CLI package
+cpp_memory_order/
+path_5_bfs_dfs/
+templates/
+dfs_bfs_templates.cpp
+two_sum_test.cpp
