@@ -525,9 +525,8 @@ async function commandCompany(args) {
 
   const config = loadConfig({ quiet: true });
   const api = new LeetCodeApi(config);
-  const companies = await api.getCompanyTags();
   const companyInputs = splitCommaInput(args.positionals);
-  const companySlugs = companyInputs.map((company) => resolveCompanySlug(company, companies));
+  const companySlugs = companyInputs.map((company) => resolveCompanySlug(company));
   const limit = integerOption(args.options.limit, 20, { min: 1 });
   const skip = integerOption(args.options.skip, 0, { min: 0 });
   const result = await api.listProblemsByCompanies({
@@ -758,7 +757,7 @@ function resolveTopicSlug(input, tags) {
   return slugifyTopic(input);
 }
 
-function resolveCompanySlug(input, companies) {
+function resolveCompanySlug(input, companies = []) {
   const aliases = new Map([
     ['facebook', 'facebook'],
     ['fb', 'facebook'],
