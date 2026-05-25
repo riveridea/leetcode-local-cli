@@ -192,6 +192,7 @@ Examples:
   lc test two-sum
   lc test 1
   lc submit two-sum
+  lc submit 1
   lc accepted two-sum
   lc progress
   lc topics two pointers

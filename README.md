@@ -98,6 +98,7 @@ You can use either the title slug or the LeetCode problem index:
 ```sh
 lc pull 1 --lang cpp
 lc test 1
+lc submit 1
 ```
 
 Edit the generated solution:
