@@ -73,6 +73,23 @@ test('formats interpret answer arrays', () => {
   assert.match(formatted.text, /Stdout:\ndebug line/);
 });
 
+test('formats test input for interpret runs', () => {
+  const formatted = formatCheckResult({
+    run_success: true,
+    status_msg: 'Accepted',
+    total_correct: 2,
+    total_testcases: 2,
+  }, {
+    mode: 'test',
+    testInput: '[2,7,11,15]\n9\n[3,2,4]\n6\n',
+  });
+
+  assert.equal(formatted.ok, true);
+  assert.match(formatted.text, /Run: Accepted/);
+  assert.match(formatted.text, /Tests: 2\/2/);
+  assert.match(formatted.text, /Test input:\n\[2,7,11,15\]\n9\n\[3,2,4\]\n6/);
+});
+
 test('does not print empty stdout lists', () => {
   const formatted = formatCheckResult({
     run_success: true,

@@ -171,11 +171,11 @@ Usage:
   lc login [--force]
   lc setup [--manual] [--browser chrome] [--profile "Profile 2"]
   lc status
-  lc pull <title-slug> [--lang cpp] [--workspace ./problems-root] [--force]
-  lc open [title-slug] [--editor vim]
-  lc test [title-slug] [--input cases.txt] [--file solution.cpp] [--lang cpp] [--json]
-  lc submit [title-slug] [--file solution.cpp] [--lang cpp] [--json]
-  lc accepted [title-slug] [--lang cpp] [--json]
+  lc pull <title-slug-or-id> [--lang cpp] [--workspace ./problems-root] [--force]
+  lc open [title-slug-or-id] [--editor vim]
+  lc test [title-slug-or-id] [--input cases.txt] [--file solution.cpp] [--lang cpp] [--json]
+  lc submit [title-slug-or-id] [--file solution.cpp] [--lang cpp] [--json]
+  lc accepted [title-slug-or-id] [--lang cpp] [--json]
   lc list
   lc progress [--limit 500] [--columns 50] [--cell-size 2] [--ascii]
   lc topics [--top]
@@ -187,8 +187,10 @@ Examples:
   lc login
   lc setup
   lc pull two-sum --lang cpp
+  lc pull 1 --lang cpp
   lc open two-sum --editor vim
   lc test two-sum
+  lc test 1
   lc submit two-sum
   lc accepted two-sum
   lc progress
@@ -320,12 +322,13 @@ async function commandStatus() {
 }
 
 async function commandPull(args) {
-  const slug = requiredPositional(args, 0, 'title-slug');
+  const problemRef = requiredPositional(args, 0, 'title-slug-or-id');
   const lang = args.options.lang || 'cpp';
   const workspaceRoot = resolveWorkspaceRoot(args);
   const api = new LeetCodeApi(loadConfig({ quiet: true }));
 
-  const question = await api.getQuestion(slug);
+  const titleSlug = await resolveQuestionTitleSlug(api, problemRef);
+  const question = await api.getQuestion(titleSlug);
   const created = await createProblemFiles({
     workspaceRoot,
     question,
@@ -382,7 +385,7 @@ async function commandTest(args) {
     timeoutMs: numberOption(args.options.timeout, 90_000),
   });
 
-  printResult(formatCheckResult(result, { mode: 'test' }));
+  printResult(formatCheckResult(result, { mode: 'test', testInput: dataInput }));
   printJsonIfRequested(result, args.options);
 }
 
@@ -418,12 +421,12 @@ async function commandSubmit(args) {
 }
 
 async function commandAccepted(args) {
-  const titleSlug = await resolveAcceptedTitleSlug(args);
   const langSlug = args.options.lang && args.options.lang !== true
     ? args.options.lang
     : undefined;
   const config = loadConfig({ quiet: true });
   const api = new LeetCodeApi(config);
+  const titleSlug = await resolveAcceptedTitleSlug(args, api);
   const accepted = await api.getLatestAcceptedSubmission({
     titleSlug,
     langSlug,
@@ -602,19 +605,38 @@ function resolveWorkspaceRoot(args) {
   return defaultWorkspaceRoot(process.cwd());
 }
 
-async function resolveAcceptedTitleSlug(args) {
-  const slug = args.positionals[0];
-  if (slug) {
-    return slug;
+async function resolveAcceptedTitleSlug(args, api) {
+  const problemRef = args.positionals[0];
+  if (problemRef) {
+    const problemDir = findProblemDir(resolveWorkspaceRoot(args), problemRef);
+    if (problemDir) {
+      const meta = await loadProblemMeta(problemDir);
+      return meta.titleSlug;
+    }
+
+    return resolveQuestionTitleSlug(api, problemRef);
   }
 
   const problemDir = findProblemDir(resolveWorkspaceRoot(args));
   if (!problemDir) {
-    throw new Error('Missing title-slug. Run "lc accepted <title-slug>", or run "lc accepted" from a local problem directory.');
+    throw new Error('Missing title-slug-or-id. Run "lc accepted <title-slug-or-id>", or run "lc accepted" from a local problem directory.');
   }
 
   const meta = await loadProblemMeta(problemDir);
   return meta.titleSlug;
+}
+
+async function resolveQuestionTitleSlug(api, problemRef) {
+  if (!isProblemIndexRef(problemRef)) {
+    return problemRef;
+  }
+
+  const question = await api.findQuestionByFrontendId(problemRef);
+  return question.titleSlug;
+}
+
+function isProblemIndexRef(value) {
+  return /^\d+$/.test(String(value).trim());
 }
 
 async function readTestInput(inputPath) {

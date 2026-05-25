@@ -93,6 +93,13 @@ Fetch a problem into `./problems`:
 lc pull two-sum --lang cpp
 ```
 
+You can use either the title slug or the LeetCode problem index:
+
+```sh
+lc pull 1 --lang cpp
+lc test 1
+```
+
 Edit the generated solution:
 
 ```sh
@@ -117,7 +124,7 @@ Print your latest accepted submission code for a problem:
 lc accepted two-sum
 ```
 
-When running from a local problem directory, the title slug can be omitted.
+When running from a local problem directory, the problem reference can be omitted.
 
 If you only want accepted code for one language, add a language slug:
 
@@ -149,6 +156,8 @@ Edit `cases.txt` to run different test data, or pass a separate file:
 ```sh
 lc test two-sum --input ./my-cases.txt
 ```
+
+`lc test` prints the input it sends to LeetCode under `Test input:`.
 
 Use `lc list` to see local problems and `lc status` to check config.
 
