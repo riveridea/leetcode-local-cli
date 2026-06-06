@@ -18,6 +18,7 @@ import {
   saveConfig,
 } from '../lib/config.js';
 import {
+  formatAcceptedSubmissions,
   formatCheckResult,
   formatCompanyTags,
   formatProgressGrid,
@@ -175,7 +176,7 @@ Usage:
   lc open [title-slug-or-id] [--editor vim]
   lc test [title-slug-or-id] [--input cases.txt] [--file solution.cpp] [--lang cpp] [--json]
   lc submit [title-slug-or-id] [--file solution.cpp] [--lang cpp] [--json]
-  lc accepted [title-slug-or-id] [--lang cpp] [--json]
+  lc accepted [title-slug-or-id] [--lang cpp] [--all] [--limit 20] [--json]
   lc list
   lc progress [--limit 500] [--columns 50] [--cell-size 2] [--ascii]
   lc topics [--top]
@@ -194,6 +195,7 @@ Examples:
   lc submit two-sum
   lc submit 1
   lc accepted two-sum
+  lc accepted two-sum --all
   lc progress
   lc topics two pointers
   lc topics dfs --limit 15
@@ -428,6 +430,24 @@ async function commandAccepted(args) {
   const config = loadConfig({ quiet: true });
   const api = new LeetCodeApi(config);
   const titleSlug = await resolveAcceptedTitleSlug(args, api);
+
+  if (args.options.all || args.options.list) {
+    const limit = integerOption(args.options.limit, 20, { min: 1 });
+    const acceptedSubmissions = await api.listAcceptedSubmissions({
+      titleSlug,
+      langSlug,
+      limit,
+    });
+
+    if (args.options.json) {
+      console.log(JSON.stringify(acceptedSubmissions, null, 2));
+      return;
+    }
+
+    console.log(formatAcceptedSubmissions(acceptedSubmissions));
+    return;
+  }
+
   const accepted = await api.getLatestAcceptedSubmission({
     titleSlug,
     langSlug,

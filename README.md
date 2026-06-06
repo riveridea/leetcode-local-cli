@@ -133,8 +133,15 @@ If you only want accepted code for one language, add a language slug:
 lc accepted two-sum --lang cpp
 ```
 
-Add `--json` to `test` or `submit` when you need to inspect the raw result
-returned by LeetCode:
+Show accepted submissions with runtime, memory, and beat percentages:
+
+```sh
+lc accepted two-sum --all
+lc accepted two-sum --all --limit 50
+```
+
+Add `--json` to `test`, `submit`, or `accepted --all` when you need to
+inspect the raw result returned by LeetCode:
 
 ```sh
 lc test two-sum --json

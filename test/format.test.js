@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  findAcceptedSubmissions,
   findLatestAcceptedSubmission,
 } from '../lib/api.js';
 import {
+  formatAcceptedSubmissions,
   formatCheckResult,
   formatCompanyTags,
   formatProgressGrid,
@@ -32,6 +34,17 @@ test('finds latest accepted submission by language', () => {
   assert.equal(submission.id, '3');
 });
 
+test('finds accepted submissions by language', () => {
+  const submissions = findAcceptedSubmissions([
+    { id: '1', statusDisplay: 'Wrong Answer', lang: 'cpp' },
+    { id: '2', statusDisplay: 'Accepted', lang: 'python3' },
+    { id: '3', statusDisplay: 'Accepted', lang: 'cpp' },
+    { id: '4', statusDisplay: 'Accepted', lang: 'cpp' },
+  ], { langSlug: 'cpp' });
+
+  assert.deepEqual(submissions.map((submission) => submission.id), ['3', '4']);
+});
+
 test('formats wrong-answer submit fields returned by LeetCode', () => {
   const formatted = formatCheckResult({
     run_success: true,
@@ -51,6 +64,24 @@ test('formats wrong-answer submit fields returned by LeetCode', () => {
   assert.match(formatted.text, /Your output:\n\[0,1\]/);
   assert.match(formatted.text, /Expected:\n\[1,2\]/);
   assert.match(formatted.text, /Stdout:\ndebug line/);
+});
+
+test('formats submit runtime and memory beat percentiles', () => {
+  const formatted = formatCheckResult({
+    run_success: true,
+    status_msg: 'Accepted',
+    total_correct: 65,
+    total_testcases: 65,
+    status_runtime: '0 ms',
+    runtime_percentile: 100,
+    status_memory: '63 MB',
+    memory_percentile: 10.331499999999949,
+  }, { mode: 'submit' });
+
+  assert.equal(formatted.ok, true);
+  assert.match(formatted.text, /Submission: Accepted/);
+  assert.match(formatted.text, /Runtime: 0 ms \(beats 100\.00%\)/);
+  assert.match(formatted.text, /Memory: 63 MB \(beats 10\.33%\)/);
 });
 
 test('formats interpret answer arrays', () => {
@@ -138,6 +169,29 @@ test('formats company tags', () => {
 
   assert.match(text, /Company tags matching "open":/);
   assert.match(text, /OpenAI\s+openai/);
+});
+
+test('formats accepted submissions with runtime and memory beat percentiles', () => {
+  const text = formatAcceptedSubmissions({
+    titleSlug: 'container-with-most-water',
+    langSlug: 'cpp',
+    limit: 20,
+    submissions: [{
+      id: '123456789',
+      timestamp: '1700000000',
+      langName: 'C++',
+      runtime: 0,
+      runtimePercentile: 100,
+      memory: 63028000,
+      memoryPercentile: 81.234,
+      url: '/submissions/detail/123456789/',
+    }],
+  });
+
+  assert.match(text, /Accepted submissions for container-with-most-water \(cpp\):/);
+  assert.match(text, /Showing: 1 of up to 20/);
+  assert.match(text, /Submitted\s+Lang\s+Runtime\s+Runtime Beat\s+Memory\s+Memory Beat/);
+  assert.match(text, /2023-11-14 22:13:20 UTC\s+C\+\+\s+0 ms\s+100\.00%\s+63\.0 MB\s+81\.23%/);
 });
 
 test('formats progress grid', () => {
