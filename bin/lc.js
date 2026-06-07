@@ -9,7 +9,6 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { LeetCodeApi } from '../lib/api.js';
-import { importLeetCodeCookiesFromBrowsers } from '../lib/browser-cookies.js';
 import {
   configPath,
   loadConfig,
@@ -170,7 +169,7 @@ async function commandHelp() {
 
 Usage:
   lc login [--force]
-  lc setup [--manual] [--browser chrome] [--profile "Profile 2"]
+  lc setup
   lc status
   lc pull <title-slug-or-id> [--lang cpp] [--workspace ./problems-root] [--force]
   lc open [title-slug-or-id] [--editor vim]
@@ -205,9 +204,8 @@ Examples:
 
 Notes:
   - lc login prompts for your password locally and saves only cookies on success.
-  - lc setup tries to import browser cookies automatically, then falls back to
-    manual cookie paste when import is unavailable. If browser cookies are
-    encrypted, setup asks macOS to unlock your login keychain and retries.
+  - lc setup asks you to paste the Cookie request header from your browser's
+    DevTools and saves the LeetCode session cookies from it.
   - If LeetCode blocks CLI password login with CAPTCHA/Cloudflare, use lc setup
     and paste the full browser Cookie request header.
   - Use this only with your own account and respect LeetCode rate limits and terms.
@@ -252,49 +250,8 @@ async function commandLogin(args) {
   console.log(`Signed in as ${login.username || username}. Saved cookies to ${configPath()}.`);
 }
 
-async function commandSetup(args) {
+async function commandSetup() {
   const current = loadConfig({ quiet: true });
-  if (!args.options.manual) {
-    console.log('Trying to import LeetCode cookies from local browser profiles...');
-    let imported = await importLeetCodeCookiesFromBrowsers({
-      browser: args.options.browser,
-      profile: args.options.profile,
-    });
-
-    if (!imported.ok && imported.needsKeychainUnlock && process.stdin.isTTY && process.stdout.isTTY) {
-      console.log(imported.reason);
-      console.log('macOS needs to unlock your login keychain to decrypt browser cookies.');
-      console.log('Enter your login keychain password at the macOS prompt. The CLI will not store it.');
-      const unlocked = await unlockLoginKeychain();
-      if (unlocked) {
-        console.log('Retrying browser cookie import after keychain unlock...');
-        imported = await importLeetCodeCookiesFromBrowsers({
-          browser: args.options.browser,
-          profile: args.options.profile,
-        });
-      }
-    }
-
-    if (imported.ok) {
-      const nextConfig = {
-        ...current,
-        session: imported.session,
-        csrfToken: imported.csrfToken,
-        workspaceDir: current.workspaceDir || defaultWorkspaceRoot(process.cwd()),
-        baseUrl: current.baseUrl || 'https://leetcode.com',
-      };
-      const oldFingerprint = cookieFingerprintSummary(current);
-      await saveConfig(nextConfig);
-      console.log(`Imported cookies from ${imported.browserName} (${imported.profileName}).`);
-      printCookieChangeSummary(oldFingerprint, cookieFingerprintSummary(nextConfig));
-      console.log(`Saved config to ${configPath()}`);
-      await validateSavedLogin(nextConfig);
-      return;
-    }
-
-    console.log(`Automatic import unavailable: ${imported.reason}`);
-    console.log('Falling back to manual cookie setup. Use "lc setup --manual" to skip import next time.');
-  }
 
   const answers = await promptForConfig({
     current,
@@ -695,32 +652,6 @@ async function openEditor(editor, filePath) {
   });
 }
 
-async function unlockLoginKeychain() {
-  const keychainPath = path.join(os.homedir(), 'Library/Keychains/login.keychain-db');
-
-  try {
-    await new Promise((resolve, reject) => {
-      const child = spawn('security', ['unlock-keychain', keychainPath], {
-        stdio: 'inherit',
-        shell: false,
-      });
-
-      child.on('error', reject);
-      child.on('exit', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`security unlock-keychain exited with code ${code}`));
-        }
-      });
-    });
-    return true;
-  } catch (error) {
-    console.log(`Could not unlock login keychain: ${error.message}`);
-    return false;
-  }
-}
-
 function numberOption(value, fallback) {
   if (value === undefined || value === true) {
     return fallback;
@@ -874,7 +805,7 @@ async function validateSavedLogin(config) {
     }
 
     console.log('Saved cookies, but LeetCode did not accept them as signed in.');
-    console.log('Open leetcode.com in the browser, confirm you are logged in, then rerun "lc setup --manual" with fresh cookie values.');
+    console.log('Open leetcode.com in the browser, confirm you are logged in, then rerun "lc setup" with fresh cookie values.');
   } catch (error) {
     console.log(`Saved cookies, but could not verify them now: ${error.message}`);
     console.log('Run "lc login" later to check whether the saved cookies are valid.');

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "lc": "node ./bin/lc.js",
-    "check": "node --check ./bin/lc.js && node --check ./lib/api.js && node --check ./lib/browser-cookies.js && node --check ./lib/config.js && node --check ./lib/format.js && node --check ./lib/workspace.js && node --test",
+    "check": "node --check ./bin/lc.js && node --check ./lib/api.js && node --check ./lib/config.js && node --check ./lib/format.js && node --check ./lib/workspace.js && node --test",
     "test": "node --test"
   },
   "engines": {

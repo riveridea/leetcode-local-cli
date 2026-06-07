@@ -3,10 +3,10 @@
 Small npm CLI for practicing LeetCode from this machine while editing solutions
 with Vim or any other editor.
 
-The tool uses your own LeetCode account session. It can save browser cookies, or
-it can try an interactive username/password login and then save only the session
-cookies. It does not try to bypass CAPTCHA, paywalls, rate limits, or other
-account controls.
+The tool uses your own LeetCode account session. You paste the session cookies
+from your browser, or it can try an interactive username/password login and then
+save only the session cookies. It does not try to bypass CAPTCHA, paywalls, rate
+limits, or other account controls.
 
 ## Setup
 
@@ -46,36 +46,35 @@ When that happens, use cookie setup instead:
 lc setup
 ```
 
-`lc setup` first tries to import LeetCode cookies automatically from local
-Chromium-family browser profiles on macOS, including Chrome, Edge, Brave, Arc,
-and Chromium. You can narrow the search:
+`lc setup` asks you to paste the full browser `Cookie:` request header. It reads
+the `LEETCODE_SESSION` and `csrftoken` values from what you paste and saves them.
+The CLI never reads your browser profile or keychain.
 
-```sh
-lc setup --browser chrome --profile "Profile 2"
-```
-
-If automatic import finds encrypted browser cookies, `lc setup` asks macOS to
-unlock your login keychain and retries the import. The CLI does not store the
-keychain password.
-
-If automatic import still cannot decrypt the browser cookie store, it falls back
-to manual setup. To skip automatic import:
-
-```sh
-lc setup --manual
-```
-
-For manual setup, paste one full browser `Cookie:` request header:
+To grab the `Cookie:` header from your browser:
 
 1. Open `https://leetcode.com/problemset/` and confirm you are signed in.
-2. Open DevTools -> **Network**.
-3. Refresh the page.
-4. Click a `leetcode.com` request, usually `graphql`.
-5. Copy the full Request Headers `Cookie:` value.
-6. Paste it into `lc setup --manual`.
+2. Open the DevTools **Network** tab:
+   - **macOS:** press **Cmd (⌘) + Option (⌥) + I** to open DevTools, then click
+     the **Network** tab.
+   - **Windows/Linux:** press **Ctrl + Shift + I** (or **F12**), then **Network**.
+   - Or right-click the page → **Inspect**, then open the **Network** tab.
+3. Reload the page so requests appear: **Cmd + R** (macOS) / **Ctrl + R** (Win/Linux).
+4. Click a request sent to `leetcode.com` — the `graphql` request or the
+   top-level document request both work.
+5. In the panel that opens, find **Headers → Request Headers**, and locate the
+   line that starts with `Cookie:`.
+6. Select the entire value after `Cookie:` and copy it:
+   - **macOS:** select the text and press **Cmd (⌘) + C** (or right-click →
+     **Copy value**).
+   - **Windows/Linux:** select and press **Ctrl + C**.
+7. Run `lc setup` and paste it at the prompt:
+   - **macOS:** **Cmd (⌘) + V** — **Windows/Linux:** **Ctrl + V** (some terminals
+     use **Ctrl + Shift + V**). The input is hidden as you paste.
 
 If that header is missing one of the required cookies, the CLI falls back to
-asking for the individual `LEETCODE_SESSION` and `csrftoken` values.
+asking for the individual `LEETCODE_SESSION` and `csrftoken` values. You can copy
+those from DevTools → **Application** tab → **Storage → Cookies →
+`https://leetcode.com`**.
 
 They are saved to `~/.leetcode-local/config.json` with file mode `0600`.
 You can also avoid the config file and set environment variables:
